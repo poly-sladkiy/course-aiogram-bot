@@ -1,9 +1,10 @@
 import logging
+
+from aiogram.types import Update
 from aiogram.utils.exceptions import (Unauthorized, InvalidQueryID, TelegramAPIError,
                                       CantDemoteChatCreator, MessageNotModified, MessageToDeleteNotFound,
                                       MessageTextIsEmpty, RetryAfter,
                                       CantParseEntities, MessageCantBeDeleted)
-
 
 from loader import dp
 
@@ -25,6 +26,7 @@ async def errors_handler(update, exception):
     if isinstance(exception, MessageNotModified):
         logging.debug('Message is not modified')
         return True
+
     if isinstance(exception, MessageCantBeDeleted):
         logging.debug('Message cant be deleted')
         return True
@@ -41,18 +43,26 @@ async def errors_handler(update, exception):
         logging.info(f'Unauthorized: {exception}')
         return True
 
+    if isinstance(exception, RetryAfter):
+        logging.exception(f'RetryAfter: {exception} \nUpdate: {update}')
+        return True
+
+    if isinstance(exception, CantParseEntities):
+        await Update.get_current().message.answer(f"Error Parse\nПопало в error handler, обратитесь в тех поддержку.\n"
+                                                  f"Ошибка: <code>{exception.args}</code>")
+        logging.exception(f'CantParseEntities: {exception} \nUpdate: {update}')
+        return True
+
     if isinstance(exception, InvalidQueryID):
         logging.exception(f'InvalidQueryID: {exception} \nUpdate: {update}')
         return True
 
     if isinstance(exception, TelegramAPIError):
+        await Update.get_current().message.answer(f"Error API\nПопало в error handler, обратитесь в тех поддержку.\n"
+                                                  f"Ошибка: <code>{exception.args}</code>")
+
         logging.exception(f'TelegramAPIError: {exception} \nUpdate: {update}')
         return True
-    if isinstance(exception, RetryAfter):
-        logging.exception(f'RetryAfter: {exception} \nUpdate: {update}')
-        return True
-    if isinstance(exception, CantParseEntities):
-        logging.exception(f'CantParseEntities: {exception} \nUpdate: {update}')
-        return True
-    
+
+    # Все не обработанные ошибки идут сюда
     logging.exception(f'Update: {update} \n{exception}')
