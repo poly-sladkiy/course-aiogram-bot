@@ -33,5 +33,18 @@ class ThrottlingMiddleware(BaseMiddleware):
             raise CancelHandler()
 
     async def message_throttled(self, message: types.Message, throttled: Throttled):
+        # Чтобы мы не отвечали человеку throttled.rate секунд между двумя последними командами
+        # delta = throttled.rate - throttled.delta
+
+        # Если сообщени прислали 2 раза
         if throttled.exceeded_count <= 2:
             await message.reply("Too many requests!")
+
+        # Если сообщени прислали 3 раза
+        # throttled.rate - количество секунд для определенной функции
+        # Если вызвать self.rate_limit, оно всегда .1 сек
+        if throttled.exceeded_count == 3:
+            await message.reply(f'You have a ban for <code>{throttled.rate}</code> seconds!\n'
+                                f'key: <code>{throttled.key}</code>')
+        # await asyncio.sleep(delta)
+        # await message.answer("Ban is end!")
